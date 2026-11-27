@@ -1,5 +1,9 @@
 # 微博直播本地录制工具（macOS）
 
+> **本项目由 AI 生成**：代码、界面与文档均由 AI 编写并多轮迭代，可能存在缺陷、边界情况未覆盖或与你的系统版本不兼容。
+> 使用中遇到问题，请在 [Issues](https://github.com/wuxi293-maker/weibo-live-recorder/issues) 留言，附上 macOS 版本、复现步骤和 `logs/` 里的关键日志，我会跟进修。
+> 仅用于录制你本人可观看、留存自用；请遵守平台条款，勿传播他人内容。
+
 直链拉流 + 流拷贝（`-c copy`）的低占用录制工具：不录屏、不转码、不抓声卡，后台拉微博直播流并分段落盘，结束后自动合并 mp4 并抽出独立 m4a。
 
 连续性：录制时只起 **一个** ffmpeg 进程，用 segment muxer 连续切片，切点之间没有空档；只有断流 / 直链过期时才重新解析续录。3 小时实测（本地实时 FLV 源）录制 60.0s、分段合计 60.023s，成片与分段总时长差 0.000s。
@@ -185,3 +189,9 @@ bash tests/app_selftest.sh  # 原生应用（窗口、启动方式、退出回�
 | 编译应用报找不到 swiftc | 安装 Xcode Command Line Tools：`xcode-select --install` |
 | 移动了工具目录后应用打不开 | 重新执行 `bash bin/install_shortcut.sh`（会重写 Info.plist 里的工具目录） |
 | 界面显示「本地服务启动失败」 | 查看 `logs/ui.out.log`；确认 `/usr/bin/python3` 可用、8765 端口未被占用 |
+
+## 问题反馈
+
+- 提交 Issue：<https://github.com/wuxi293-maker/weibo-live-recorder/issues>
+- 请附：macOS 版本与芯片、使用的微博直播链接类型（或说明不便提供）、复现步骤、`logs/recorder_*.log` 与 `~/Library/Logs/WeiboLiveRecorder/ui.out.log` 的尾部内容
+- 已知限制：断流重连有 1–2 秒缺口；不支持 AES/DRM 加密流；视频号、抖音未适配
