@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# 启动本地图形界面（macOS / Linux），并自动打开浏览器
+set -euo pipefail
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+[[ -f "$DIR/env.local" ]] && source "$DIR/env.local"
+export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+PORT="${WLR_PORT:-8765}"
+
+# 后台等待服务起来后打开浏览器
+( sleep 1
+  if command -v open >/dev/null 2>&1; then open "http://127.0.0.1:$PORT"
+  elif command -v xdg-open >/dev/null 2>&1; then xdg-open "http://127.0.0.1:$PORT"
+  fi ) &
+
+exec python3 -m weibo_recorder.server --port "$PORT"

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  本机已填好路径的 launchd 常驻看护。
+  启用前：把下方 <string>__LIVE_URL__</string> 替换为真实微博直播链接，然后：
+    cp /Users/guowei/DoubaoWork/tools/weibo-live-recorder/launchd/com.doubao.weibo.live.recorder.plist \
+       ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.doubao.weibo.live.recorder.plist
+  卸载：
+    launchctl unload ~/Library/LaunchAgents/com.doubao.weibo.live.recorder.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.doubao.weibo.live.recorder</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>-m</string>
+        <string>weibo_recorder.recorder</string>
+        <string>--url</string>
+        <string>__LIVE_URL__</string>
+        <string>--out-dir</string>
+        <string>/Users/guowei/Movies/WeiboLive</string>
+        <string>--version</string>
+        <string>v1</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/guowei/DoubaoWork/tools/weibo-live-recorder</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PYTHONPATH</key>
+        <string>/Users/guowei/DoubaoWork/tools/weibo-live-recorder</string>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>FFMPEG_BIN</key>
+        <string>/Users/guowei/Library/Application Support/TRAE SOLO CN/ModularData/ai-agent/vm/tools/opt/ffmpeg/8.1.2/bin/ffmpeg</string>
+        <key>FFPROBE_BIN</key>
+        <string>/Users/guowei/Library/Application Support/TRAE SOLO CN/ModularData/ai-agent/vm/tools/opt/ffmpeg/8.1.2/bin/ffprobe</string>
+    </dict>
+
+    <!-- 仅在异常退出时自动拉起；正常录制结束(退出码0)不重复启动 -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <key>StandardOutPath</key>
+    <string>/Users/guowei/DoubaoWork/tools/weibo-live-recorder/logs/launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/guowei/DoubaoWork/tools/weibo-live-recorder/logs/launchd.err.log</string>
+</dict>
+</plist>

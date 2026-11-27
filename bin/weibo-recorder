@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# 微博直播录制命令行入口（macOS / Linux）
+set -euo pipefail
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# 本机环境变量（ffmpeg/ffprobe 路径、Cookie 等），不存在则跳过
+if [[ -f "$DIR/env.local" ]]; then
+  # shellcheck disable=SC1091
+  source "$DIR/env.local"
+fi
+
+export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m weibo_recorder.recorder "$@"

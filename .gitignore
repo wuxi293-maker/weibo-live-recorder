@@ -1,0 +1,7 @@
+env.local
+logs/
+__pycache__/
+*.pyc
+.DS_Store
+dist/*.dmg
+dist/*.zip

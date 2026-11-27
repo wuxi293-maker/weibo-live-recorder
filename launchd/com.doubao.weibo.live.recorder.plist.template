@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd 常驻看护模板（macOS）。
+  安装前替换下面 __占位符__：
+    __TOOL_DIR__   本工具包绝对路径，例如 /Users/guowei/Apps/weibo-live-recorder
+    __URL__        微博直播页链接
+    __OUT_DIR__    成片输出目录，例如 /Users/guowei/Movies/WeiboLive
+    __LOG_DIR__    日志目录
+    __WEIBO_COOKIE__  可选；受限流才需要本人登录 cookie，公开直播留空即可
+  安装：
+    cp com.doubao.weibo.live.recorder.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.doubao.weibo.live.recorder.plist
+  卸载：
+    launchctl unload ~/Library/LaunchAgents/com.doubao.weibo.live.recorder.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.doubao.weibo.live.recorder</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>-m</string>
+        <string>weibo_recorder.recorder</string>
+        <string>--url</string>
+        <string>__URL__</string>
+        <string>--out-dir</string>
+        <string>__OUT_DIR__</string>
+        <string>--version</string>
+        <string>v1</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__TOOL_DIR__</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PYTHONPATH</key>
+        <string>__TOOL_DIR__</string>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>WEIBO_COOKIE</key>
+        <string>__WEIBO_COOKIE__</string>
+    </dict>
+
+    <!-- 仅在异常退出时自动拉起；正常录制结束(退出码0)不重复启动 -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <key>StandardOutPath</key>
+    <string>__LOG_DIR__/launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>__LOG_DIR__/launchd.err.log</string>
+</dict>
+</plist>

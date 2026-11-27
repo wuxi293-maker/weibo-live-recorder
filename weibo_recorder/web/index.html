@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微博直播录制工具</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #fff; --line: #e6e8ec; --text: #1f2329;
+    --muted: #8a9099; --primary: #2f6bff; --primary-d: #1f56d6;
+    --green: #16a34a; --red: #dc2626; --gray: #9aa1ac;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px; margin-bottom: 16px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  input[type=text] { flex: 1; min-width: 260px; padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 10px; font-size: 14px; outline: none; }
+  input[type=text]:focus { border-color: var(--primary); }
+  label.opt { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  input[type=number] { width: 90px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; }
+  button { border: 0; border-radius: 10px; padding: 10px 18px; font-size: 14px; cursor: pointer; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-d); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-ghost { background: #eef1f5; color: var(--text); }
+  .btn-ghost:hover { background: #e2e7ee; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .badges { display: flex; gap: 12px; flex-wrap: wrap; }
+  .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px;
+    font-size: 14px; background: #f0f2f5; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gray); }
+  .live-live .dot { background: var(--green); }
+  .live-ended .dot { background: var(--red); }
+  .rec-on .dot { background: var(--primary); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%{opacity:1} 50%{opacity:.35} 100%{opacity:1} }
+  .stats { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 14px; font-size: 13px; color: var(--muted); }
+  .stats b { color: var(--text); font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; }
+  tr.item { cursor: pointer; }
+  tr.item:hover { background: #f7f9ff; }
+  tr.active { background: #eef3ff; }
+  .preview { margin-top: 16px; }
+  video { width: 100%; border-radius: 12px; background: #000; max-height: 420px; }
+  .empty { color: var(--muted); font-size: 13px; padding: 18px 0; text-align: center; }
+  .muted { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>微博直播录制工具</h1>
+  <div class="sub">直链拉流 · 流拷贝 · 不录屏不转码 · 后台分段录制</div>
+
+  <div class="card">
+    <div class="row">
+      <input id="url" type="text" placeholder="粘贴微博直播页链接，如 https://weibo.com/l/wblive/p/show/1022:xxxx">
+      <button id="btn-check" class="btn-ghost">查询状态</button>
+      <button id="btn-start" class="btn-primary">开始录制</button>
+      <button id="btn-stop" class="btn-danger" disabled>停止并合并</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="opt">分段秒数 <input id="seg" type="number" value="180" min="30" step="30"></label>
+      <label class="opt">最长秒数(0=直到结束) <input id="maxsec" type="number" value="0" min="0"></label>
+      <label class="opt"><input id="noaudio" type="checkbox"> 只录画面</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="badges">
+      <span class="badge" id="live-badge"><span class="dot"></span><span id="live-text">未输入链接</span></span>
+      <span class="badge" id="rec-badge"><span class="dot"></span><span id="rec-text">空闲</span></span>
+    </div>
+    <div class="stats">
+      <span>分段数 <b id="st-segs">0</b></span>
+      <span>最新分段 <b id="st-size">—</b></span>
+      <span>已录时长 <b id="st-elapsed">00:00</b></span>
+      <span class="muted" id="st-session"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sub" style="margin-bottom:10px">成片列表（点击预览）</div>
+    <div id="list-wrap"><div class="empty">暂无成片</div></div>
+    <div class="preview" id="preview-wrap" style="display:none">
+      <video id="player" controls preload="metadata"></video>
+    </div>
+  </div>
+</div>
+
+<script>
+let recordings = [];
+let selected = null;
+
+function fmtBytes(n) {
+  if (!n && n !== 0) return "—";
+  if (n < 1024) return n + " B";
+  if (n < 1048576) return (n/1024).toFixed(1) + " KB";
+  if (n < 1073741824) return (n/1048576).toFixed(1) + " MB";
+  return (n/1073741824).toFixed(2) + " GB";
+}
+function fmtDur(s) {
+  if (!s) return "—";
+  s = Math.round(Number(s));
+  const m = Math.floor(s/60), sec = s%60;
+  return String(m).padStart(2,"0") + ":" + String(sec).padStart(2,"0");
+}
+function fmtElapsed(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  if (h > 0) return h + ":" + String(m).padStart(2,"0") + ":" + String(sec).padStart(2,"0");
+  return String(m).padStart(2,"0") + ":" + String(sec).padStart(2,"0");
+}
+
+async function api(path, body) {
+  const opt = body ? {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)} : {};
+  const r = await fetch(path, opt);
+  return r.json();
+}
+
+async function refresh() {
+  const st = await api("/api/status");
+  // 直播状态
+  const live = st.live || {};
+  const liveBadge = document.getElementById("live-badge");
+  liveBadge.className = "badge " + (live.status === 1 ? "live-live" : live.status === 0 ? "" : "live-ended");
+  document.getElementById("live-text").textContent = live.label + (live.title ? " · " + live.title : "");
+
+  // 录制状态
+  const rec = st.recording || {};
+  const recBadge = document.getElementById("rec-badge");
+  recBadge.className = "badge " + (rec.running ? "rec-on" : "");
+  document.getElementById("rec-text").textContent = rec.running ? "录制中" : "空闲";
+  document.getElementById("st-segs").textContent = rec.segments;
+  document.getElementById("st-size").textContent = rec.latest_size ? fmtBytes(rec.latest_size) : "—";
+  document.getElementById("st-elapsed").textContent = fmtElapsed(rec.elapsed);
+  document.getElementById("st-session").textContent = rec.session_dir || "";
+  document.getElementById("btn-start").disabled = rec.running;
+  document.getElementById("btn-stop").disabled = !rec.running;
+
+  recordings = st.recordings || [];
+  renderList();
+}
+
+function renderList() {
+  const wrap = document.getElementById("list-wrap");
+  if (!recordings.length) { wrap.innerHTML = '<div class="empty">暂无成片</div>'; return; }
+  let html = '<table><thead><tr><th>成片</th><th>时长</th><th>大小</th><th>时间</th></tr></thead><tbody>';
+  recordings.forEach((r, i) => {
+    html += `<tr class="item ${selected === r.rel ? "active" : ""}" data-i="${i}">
+      <td>${r.name}</td><td>${fmtDur(r.duration)}</td><td>${fmtBytes(r.size)}</td><td>${r.mtime_str}</td></tr>`;
+  });
+  html += "</tbody></table>";
+  wrap.innerHTML = html;
+  wrap.querySelectorAll("tr.item").forEach(tr => {
+    tr.onclick = () => selectRecord(recordings[Number(tr.dataset.i)]);
+  });
+}
+
+function selectRecord(r) {
+  selected = r.rel;
+  document.getElementById("player").src = "/media?path=" + encodeURIComponent(r.rel);
+  document.getElementById("preview-wrap").style.display = "block";
+  renderList();
+}
+
+async function checkLive() {
+  const url = document.getElementById("url").value.trim();
+  if (!url) { alert("请先粘贴直播链接"); return; }
+  const res = await api("/api/check", { url });
+  if (!res.ok) alert(res.error || "状态查询失败");
+  refresh();
+}
+document.getElementById("btn-check").onclick = checkLive;
+document.getElementById("url").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") checkLive();
+});
+
+document.getElementById("btn-start").onclick = async () => {
+  const url = document.getElementById("url").value.trim();
+  if (!url) { alert("请先粘贴直播链接"); return; }
+  const res = await api("/api/start", {
+    url,
+    segment_seconds: Number(document.getElementById("seg").value) || 180,
+    max_seconds: Number(document.getElementById("maxsec").value) || 0,
+    no_audio: document.getElementById("noaudio").checked,
+  });
+  if (!res.ok) alert(res.error || "启动失败");
+  refresh();
+};
+document.getElementById("btn-stop").onclick = async () => {
+  await api("/api/stop", {});
+  refresh();
+};
+
+refresh();
+setInterval(refresh, 3000);
+</script>
+</body>
+</html>
